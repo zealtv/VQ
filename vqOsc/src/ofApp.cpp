@@ -1,240 +1,186 @@
 #include "ofApp.h"
- 
+
 //--------------------------------------------------------------
 void ofApp::setup(){
-  
+  ofSetFrameRate(60);
+  //SET UP OSC
+  oscSender.setup("192.168.1.255", 5050);
 
-  pui.setup();
-  //pui.setControllable ( &effect );
-  pui.setMasterControllable( this );
+  //SET UP WIRINGPI
+  if( wiringPiSetup() == -1 )
+    cout << "WiringPiSetup Failed!" << endl;
+  else
+    cout << "WiringPiSetup() Succeeded!" << endl;
 
-  guiMode = false;
-  mode = 1;
+  //SETUP POTENTIOMETERS
+  potController.setup();
 
-  setMode( mode );
-
-  for( int i = 0; i < 8; i++ )
-  {
-    sourceParams[i] = 0.0;
-    effectParams[i] = 0.0;    
+  for(int i = 0; i < 8; i++){
+    params[i] = 0.0;
+    lastParams[i] = 0.0;
   }
 
-  myFont.loadFont( "arial.ttf", 64 );
+  //SETUP LED
+  pinMode( 0,OUTPUT );
+  pinMode( 2,OUTPUT );
+  pinMode( 3,OUTPUT );
+
+  boolLedR = false;
+  boolLedG = false;
+  boolLedB = false;
+
+  //turn off LED
+  digitalWrite( 0, 1 );
+  digitalWrite( 2, 1 );
+  digitalWrite( 3, 1 );
+
+  //SETUP BUTTONS
+  pinMode( 4, INPUT );
+  pullUpDnControl( 4, PUD_UP ); //switch on internal pull up resistor
+  pinMode( 5, INPUT );
+  pullUpDnControl( 5, PUD_UP ); //switch on internal pull up resistor
+  pinMode( 6, INPUT );
+  pullUpDnControl( 6, PUD_UP ); //switch on internal pull up resistor
+  pinMode( 7, INPUT );
+  pullUpDnControl( 7, PUD_UP ); //switch on internal pull up resistor
+  pinMode( 8, INPUT );  // has built in pull up resistor
+  pinMode( 9, INPUT );  // has built in pull up resistor
 
 
-  debug = true;
-  
-  wWidth = ofGetWidth();
-  wHeight = ofGetHeight();
-
-  
-  ofSetVerticalSync(true);
-  ofEnableAlphaBlending();
-  
-
-  camSource.setup();
-  cout << "SETTING UP VID SOURCE" << endl;
-//  videoSource.setup();
-
-	//set up fbos
-	fboThisFrame.allocate( ofGetWidth(), ofGetHeight() );
-	fboLastFrame.allocate( ofGetWidth(), ofGetHeight() );
-
-	//clear fbos
-	fboThisFrame.begin();
-	ofClear( 255, 255, 255, 0 );
-	fboThisFrame.end();
-
-	fboLastFrame.begin();
-	ofClear( 255, 255, 255, 0 );
-	fboLastFrame.end();
-
+  for( int i = 0; i < 6; i++ ){
+    buttonLastState[i] = false;
+    buttonTimePressed[i] = 0.0;
+    buttonTimeReleased[i] = 0.0;
+    buttonCheckLongPress[i] = true;
+  }
 
 }
 
 
 //------UPDATE-----------------------------------------------
 void ofApp::update(){
+  updateButtons();
+  updateParams();
+  potController.update();
 
-  ofBackground( 0, 0, 0 );
-
-  pui.update();
-
-  if(mode == 0 ) pui.getParams( sourceParams );
-  if(mode == 1 ) pui.getParams( effectParams );  
-
-  camSource.update();
-  //videoSource.update();
-	renderFrame();
+  // bool change = false;
 }
 
-
-
-
-
-
-
-// DRAW DRAW DRAW DRAW DRAW DRAW
 //--------------------------------------------------------------
-void ofApp::draw(){
-  //ofSetHexColor(0xffffff);
-	ofClear(0, 0, 0);	
-	fboThisFrame.draw( 0, 0 );
-
-  if( guiMode )
-  {
-    //draw gui
-    ofSetColor( 50, 50, 50, 200 );
-    ofRect( 30, 30, wWidth - 60, wHeight - 60 );
-    ofSetColor( 255, 255, 255, 255 );
+void ofApp::updateParams(){
+  //send pots as oscSender
+  if(potController.hasNewValue){
+    ofxOscMessage m;
+    m.setAddress("/p");
+    for(int i = 0; i < NUMPOTS; i++)
+      m.addFloatArg(potController.potValues[i]);
+    oscSender.sendMessage(m);
   }
-
 }
 
 
+//--------------------------------------------------------------
+void ofApp::updateButtons(){
 
-void ofApp::renderFrame()
-{
-  effect.render( fboThisFrame, camSource.texture, fboLastFrame.getTextureReference(0), effectParams );
-  //effect.render( fboThisFrame, videoSource.getTextureReference(), fboLastFrame.getTextureReference(0), effectParams );
+  bool change = false;
 
-  fboLastFrame.begin();
-  fboThisFrame.draw( 0, 0 );
-  fboLastFrame.end();	
+	//read buttons
+	for( int i = 0; i < 6; i++ )
+		buttonCurrentState[i] = digitalRead( i + 4 );
+
+	//check for long presses
+	for( int i = 0; i < 6; i++ ){
+		if( buttonLastState[i] == 0 && buttonCurrentState[i] == 0 && buttonCheckLongPress[i] )
+		    if( ofGetElapsedTimeMillis() - buttonTimePressed[i] > 1000.0 )  //compare current time and previous time
+					buttonCheckLongPress[i] = false;
+
+		//check for press and releases
+		if( buttonCurrentState[i] != buttonLastState[i] ){
+      change = true;
+			if( buttonCurrentState[i] == 0 ) //press
+				buttonTimePressed[i] = ofGetElapsedTimeMillis();  //start timer
+			else
+				buttonCheckLongPress[i] = true;  //release
+			buttonLastState[i] = buttonCurrentState[i];
+		}
+	}
+
+  //send buttons as osc
+  if(change){
+    ofxOscMessage m;
+    m.setAddress("/b");
+    //remap buttons and invert state
+      m.addInt32Arg(1 - buttonCurrentState[0]);  //0
+      m.addInt32Arg(1 - buttonCurrentState[4]);  //1
+      m.addInt32Arg(1 - buttonCurrentState[3]);  //2
+      m.addInt32Arg(1 - buttonCurrentState[5]);  //3
+      m.addInt32Arg(1 - buttonCurrentState[2]);  //4
+    oscSender.sendMessage(m);
+  }
 }
-
-
-
 
 
 
 //--------------------------------------------------------------
-void ofApp::exit()
-{
+void ofApp::exit(){
   cout << endl << "EXIT CALLED" << endl;
-  camSource.close();
-  //videoSource.close();
-  pui.close();
+  setLed( 0, 0, 0 );
 }
 
 
-
-
 //--------------------------------------------------------------
-void ofApp::keyPressed(int key){ 
+void ofApp::keyPressed(int key){
 
   if( key == '0' )
-  {
-    pui.setLed( 0, 0, 0 );
-  }
+    setLed( 0, 0, 0 );
+
   if( key == '1' )
-  {
-    pui.setLed( 1, 0, 0 );
-  }
+    setLed( 1, 0, 0 );
+
   if( key == '2' )
-  {
-    pui.setLed( 0, 1, 0 );
-  }
+    setLed( 0, 1, 0 );
+
   if( key == '3' )
-  {
-    pui.setLed( 0, 0, 1 );
-  }
+    setLed( 0, 0, 1 );
+
   if( key == '4' )
-  {
-    pui.setLed( 1, 1, 0 );
-  }
+    setLed( 1, 1, 0 );
+
   if( key == '5' )
-  {
-    pui.setLed( 1, 0, 1 );
-  }
+    setLed( 1, 0, 1 );
+
   if( key == '6' )
-  {
-    pui.setLed( 0, 1, 1 );
-  }
+    setLed( 0, 1, 1 );
+
   if( key == '7' )
-  {
-    pui.setLed( 1, 1, 1 );
-  }
+    setLed( 1, 1, 1 );
 
+  if( key == 'q' || key =='Q' )
+      ofExit();
 
-  if( key == 'X' )
-  {
-
-    cout << "EXIT!  SHUTTING DOWN!" << endl;
-    system("shutdown -h now");
-//    ofExit();
-  }
-
-
-  if( key == 'p' )
-  {
-    for( int i = 0; i < 8; i++ )
-    {
-      cout << "effect param[" << i <<"] = " << effectParams[i] << endl;
-    }
-  }
-
-if( key == 'q' || key =='Q' )
-  {
-    ofExit();
-  }
-  
-  
-  
 }
 
-
-
-void ofApp::buttonPress(int i)
-{
-
-  if( i == 0 )
-  {
-    setMode( !mode );
-  } 
-  
+//--------------------------------------------------------------
+void ofApp::setLed( bool r, bool g, bool b){
+		digitalWrite(0, !r);
+    digitalWrite(2, !g);
+    digitalWrite(3, !b);
 }
-void ofApp::buttonRelease(int i)
-{}
-void ofApp::buttonLongPress(int i)
-{}
-
-
 
 
 //--------------------------------------------------------------
-void ofApp::setMode( int m )
-{
-  mode = m;
-  pui.setLed(!mode, 0, mode);
+void ofApp::keyReleased(int key){
 
-  if( mode == 0 ) 
-  {
-    //pui.setControllable( &videoSource );
-    pui.setControllable( &camSource );
-  }
-  else
-  {
-    pui.setControllable( &effect );
-  }
-}
-
-
-
-
-//--------------------------------------------------------------
-void ofApp::keyReleased(int key){ 
-  
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
-  
+
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button){
-  
+
 }
 
 //--------------------------------------------------------------
@@ -256,9 +202,6 @@ void ofApp::gotMessage(ofMessage msg){
 }
 
 //--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){ 
+void ofApp::dragEvent(ofDragInfo dragInfo){
 
 }
-
-
-

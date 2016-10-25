@@ -1,26 +1,13 @@
 #include "ofMain.h"
 #include "ofApp.h"
-#include "ofGLProgrammableRenderer.h"
+#include "ofAppNoWindow.h"
 
 //========================================================================
 int main( ){
-
-	//typedef void(*FunctionPointer)();
-
-
-	ofSetLogLevel(OF_LOG_VERBOSE);
-	//ofSetLogLevel(OF_LOG_ERROR);	
+	ofSetLogLevel(OF_LOG_ERROR);
 	ofSetLogLevel("ofThread", OF_LOG_WARNING);
 
-
-  	ofSetCurrentRenderer(ofGLProgrammableRenderer::TYPE);
-	ofSetupOpenGL(640, 480, OF_FULLSCREEN);			// <-------- setup the GL context
-
-	ofHideCursor();
-
-	// this kicks off the running of my app
-	// can be OF_WINDOW or OF_FULLSCREEN
-	// pass in width and height too:
+	ofAppNoWindow w;
+	ofSetupOpenGL(&w,1024,768, OF_WINDOW);
 	ofRunApp( new ofApp() );
-
 }

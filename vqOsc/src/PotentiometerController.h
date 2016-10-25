@@ -1,43 +1,16 @@
 #pragma once
-
 #include "ofMain.h"
-#include "wiringPiSPI.h"
+#include "Potentiometer.h"
+#define NUMPOTS 8
 
-
-class PotentiometerController: public ofThread
-{
+class PotentiometerController: public ofThread{
 public:
-	PotentiometerController();
-	//PotentiometerController( int input );
-	bool setup( int i );
+	void setup();
 	void threadedFunction();
-	
+	void update();
+	float potValues[NUMPOTS];
+	bool hasNewValue;
 
-	
-	int readAnalogDigitalConvertor();
-	int potentiometerInput;
-	
-	
-	int lastPotValue;
-	int potValue;
-	int changeAmount;
-	bool didPotChange;
-	
-	static const int avgSize = 16;
-	int lastPotValues[16];
-	int lastPotAverageValue;
-	int currentAverageIndex;
-
-	int lastFilteredPotValue;
-
-	bool didFilteredPotChange;	
-
-	static const int filterSize = 1;
-
-
-	bool doToleranceCheck;
-	int tolerance;
-	
-	bool isReady;
-	
+private:
+	Potentiometer pots[NUMPOTS];
 };

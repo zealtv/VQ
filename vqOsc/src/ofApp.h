@@ -1,21 +1,18 @@
 #pragma once
 #include "ofMain.h"
-#include "CamSource.h"
-#include "VideoSource.h"
-#include "Effect.h"
-#include "Pui.h"
-#include "Controllable.h"
+#include "PotentiometerController.h"
+#include "wiringPi.h"
+#include "ofxOsc.h"
 
-class ofApp : public ofBaseApp, Controllable
+class ofApp : public ofBaseApp
 {
-	
-	public:
 
+	public:
 		void setup();
 		void update();
-		void draw();
-		void renderFrame();
-		
+
+		void updateParams();
+		void setLed( bool r, bool g, bool b );
 		void keyPressed(int key);
 		void keyReleased(int key);
 		void mouseMoved(int x, int y );
@@ -24,38 +21,27 @@ class ofApp : public ofBaseApp, Controllable
 		void mouseReleased(int x, int y, int button);
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
-		void gotMessage(ofMessage msg);		
-		
-
-		ofFbo fboThisFrame;
-		ofFbo fboLastFrame;
-    	ofTrueTypeFont myFont;
-
-    	bool debug;
-
-    	float wWidth;
-    	float wHeight;
-  		float effectParams[8];
-		float sourceParams[8];  
-		
-		bool mode;		
-
-  		bool guiMode;
+		void gotMessage(ofMessage msg);
 
 	private:
-
-		void updateButtons();
-		void toggleBypass();
-		void setMode( int m );	
+		float params[8];
+		float lastParams[8];
 		void exit();
 
-		void buttonPress(int i);
-		void buttonRelease(int i);
-		void buttonLongPress(int i);
+		void updateButtons();
 
-		CamSource camSource;
-		VideoSource videoSource;
-		Effect effect;
-		Pui pui;
+		bool boolLedR;
+		bool boolLedG;
+		bool boolLedB;
 
+		bool buttonCurrentState[6];
+		bool buttonLastState[6];
+		float buttonTimePressed[6];
+		float buttonTimeReleased[6];
+		bool buttonCheckLongPress[6];
+
+		PotentiometerController potController;
+		bool isReady;
+
+		ofxOscSender oscSender;
 };
