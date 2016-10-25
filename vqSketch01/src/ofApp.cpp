@@ -34,6 +34,8 @@ void ofApp::update(){
     //update up VQ listener
     vq.update();
 
+    camera.roll(vq.getParameters().pots[2] * 360.0 );
+
     for(int i = 0; i < numPoints; i++){
       points[i].z += 10.0 + vq.getParameters().pots[0] * 100.0;
       if(points[i].z > 1000.0){
@@ -77,6 +79,9 @@ void ofApp::draw(){
 
   ofSetColor(255);
   fbo.draw(0.0, 0.0, ofGetWidth(), ofGetHeight());
+
+  ofSetColor(255);
+  ofDrawBitmapString("fps: " + ofToString(ofGetFrameRate()), 50, 50);
 }
 
 //--------------------------------------------------------------
