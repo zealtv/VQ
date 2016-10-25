@@ -13,4 +13,5 @@ public:
     vector<ofPoint> points;
 
     int numPoints;
+    ofFbo fbo;
 };
