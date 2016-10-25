@@ -14,4 +14,5 @@ public:
 
     int numPoints;
     ofFbo fbo;
+    ofCamera camera;
 };
