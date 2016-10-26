@@ -5,22 +5,30 @@ void ofApp::setup(){
     //set up VQ listener
     vq.setup(5050);
 
+    cout << "vsync" << endl;
     ofSetVerticalSync(true);
+    cout << "set framerate" << endl;
     ofSetFrameRate(60);
-    ofSetBackgroundAuto(false);
+    cout << "set background auto" << endl;
+    // ofSetBackgroundAuto(false);
 
+    cout << "allocate fbo" << endl;
     fbo.allocate(ofGetWidth(), ofGetHeight());
     fbo.begin();
     ofClear(0);
     fbo.end();
 
+    cout << "init points" << endl;
     numPoints = 200;
+    cout << "resize" << endl;
     points.resize(numPoints);
     for(int i = 0; i < numPoints; i++){
-      points[i].set( ofPoint( ofRandom(-ofGetWidth() * 2, ofGetWidth() * 3), ofRandom(-ofGetHeight() * 2, ofGetHeight() * 3), ofRandom(0.0, -10000.0 ) ) );
+      cout << "point... " << ofToString(i) << endl;
+      points[i] = ofPoint( ofRandom(-ofGetWidth() * 2, ofGetWidth() * 3), ofRandom(-ofGetHeight() * 2, ofGetHeight() * 3), ofRandom(0.0, -10000.0 ) );
       //check for dots near center of camera
     }
 
+    cout << "alpha blending" << endl;
     ofEnableAlphaBlending();
     // glEnable(GL_BLEND);
 
@@ -34,7 +42,7 @@ void ofApp::update(){
     //update up VQ listener
     vq.update();
 
-    camera.roll(vq.getParameters().pots[2] * 360.0 );
+    camera.roll(vq.getParameters().pots[2] * 10.0 );
 
     for(int i = 0; i < numPoints; i++){
       points[i].z += 10.0 + vq.getParameters().pots[0] * 100.0;
