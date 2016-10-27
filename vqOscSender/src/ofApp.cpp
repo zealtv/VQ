@@ -7,7 +7,7 @@ void ofApp::setup(){
 
 	gui.setup();
 	for(int i = 0; i < 8; i++){
-		gui.add(pots[i].set(ofToString(i + 1),0.0,0.0,1.0));
+		gui.add(pots[i].set(ofToString(i),0.0,0.0,1.0));
 		potValues[i] = 0;
 	}
 		
