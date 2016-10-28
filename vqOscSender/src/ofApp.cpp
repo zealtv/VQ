@@ -32,24 +32,34 @@ void ofApp::update(){
 	for(int i = 0; i < 5; i++){
 		if(buttonValues[i] != (int)buttons[i].get()){
 			buttonValues[i] = (int)buttons[i].get();
-			newPotMessage = true;
+			newButtonMessage = true;
 		}
 	}
 
 	if(newPotMessage){
+		lastMessage = "";
 		ofxOscMessage m;
 		m.setAddress("/p");
-		for(int i = 0; i < 8; i++)	
-			m.addFloatArg(pots[i].get());	
+		lastMessage += "/p";
+		for(int i = 0; i < 8; i++){	
+			m.addFloatArg(potValues[i]);
+			lastMessage += " " + ofToString(potValues[i]);
+			if(i == 3)
+				lastMessage += "    \n";
+		}	
 	
 		sender.sendMessage(m, false);
 	}
 
 	if(newButtonMessage){
+		lastMessage = "";
 		ofxOscMessage m;
 		m.setAddress("/b");
-		for(int i = 0; i < 5; i++)	
-			m.addIntArg((int)buttons[i].get());	
+		lastMessage += "/b";
+		for(int i = 0; i < 5; i++){
+			m.addIntArg(buttonValues[i]);	
+			lastMessage += " " + ofToString(buttonValues[i]);
+		}
 	
 		sender.sendMessage(m, false);
 	}
@@ -58,21 +68,11 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
    	gui.draw();
+   	ofDrawBitmapString(lastMessage, 10, ofGetHeight() - 20);
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-	if(key == 'a' || key == 'A'){
-		ofxOscMessage m;
-		m.setAddress("/test");
-		m.addIntArg(1);
-		m.addFloatArg(3.5f);
-		m.addStringArg("hello");
-		m.addFloatArg(ofGetElapsedTimef());
-		sender.sendMessage(m, false);
-	}
-    
-
 }
 
 //--------------------------------------------------------------

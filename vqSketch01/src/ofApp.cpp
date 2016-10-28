@@ -2,17 +2,18 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
 
+
     //set up VQ listener
     vq.setup(5050);
-
-    ofSetVerticalSync(true);
-    ofSetFrameRate(60);
-    // ofSetBackgroundAuto(false);
 
     fbo.allocate(ofGetWidth(), ofGetHeight());
     fbo.begin();
     ofClear(0);
     fbo.end();
+
+    ofSetVerticalSync(true);
+    ofSetFrameRate(60);
+    // ofSetBackgroundAuto(false);
 
     numPoints = 200;
     points.resize(numPoints);
@@ -21,12 +22,12 @@ void ofApp::setup(){
       //check for dots near center of camera
     }
 
-    ofEnableAlphaBlending();
-    // glEnable(GL_BLEND);
+    //TODO sort points by Z
 
-    ofClear(0);
-    ofSetIcoSphereResolution(0);
-    ofSetLineWidth(4);
+    ofEnableAlphaBlending();
+
+    icoSphere.setResolution(0);
+    // ofSetLineWidth(4);
 }
 
 //--------------------------------------------------------------
@@ -45,43 +46,64 @@ void ofApp::update(){
         points[i].z = -10000.0;
       }
     }
+
+    if(vq.getParameters().buttons[1] == 1){
+      camera.enableOrtho();
+      cout << "es\n";
+    }
+    else
+      camera.disableOrtho();
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
   ofClear(0);
-  fbo.begin();  
 
-  // ofPushMatrix();
-  // ofSetColor(255);
-  // fbo.draw(5.0, 5.0, ofGetWidth() - 5.0, ofGetHeight() - 5.0);
-  // ofPopMatrix();
+  ofSetLineWidth(vq.getParameters().pots[4] * 4 + 1);
+
+  fbo.begin();
 
   int o = ofMap(vq.getParameters().pots[3], 0.0, 1.0, 50, 0);
   ofSetColor(0, o);
   ofDrawRectangle(0.0, 0.0, ofGetWidth(), ofGetHeight());
 
-
   camera.begin();
+  
 
   for(int i = 0; i < numPoints; i++){
 
     ofPushMatrix();
-    int h;
+
+    //create colour
+    ofColor c1;    
+    int h;    
     h = (int)((ofGetElapsedTimeMillis() * 0.005) + i * 10)% 255; // cycle colours
-    ofColor c = ofColor::fromHsb(h, vq.getParameters().pots[1] * 255, 255);
-    c.a = ofMap(points[i].z, -10000.0, -8000.0, 0, 255, true); //fade in from background
-    ofSetColor(c);
+    c1 = ofColor::fromHsb(h, vq.getParameters().pots[1] * 255, 255);
+    c1.a = ofMap(points[i].z, -10000.0, -8000.0, 0, 255, true); //fade in from background
+    ofSetColor(c1);
+    
     ofDrawLine(points[i], ofPoint(points[i].x, points[i].y, points[i].z -  (3000 * vq.getParameters().pots[0])));
 
-    h = (int)((ofGetElapsedTimeMillis() * 0.005) + i * 10 + (255/2))% 255; // cycle colours
-    c = ofColor::fromHsb(h, vq.getParameters().pots[1] * 255, 255);
-    ofSetColor(c);
+    ofColor c2 = c1;
+    c2.setHue((int)((ofGetElapsedTimeMillis() * 0.005) + i * 10 + (255/2))% 255); // rotate colours by 180
+    ofSetColor(c2);
 
-    ofDrawIcoSphere(points[i], vq.getParameters().pots[4] * 150 + 5);
+
+    ofPushMatrix();
+    ofTranslate(points[i]);
+    icoSphere.setRadius( vq.getParameters().pots[4] * 150 );
+    icoSphere.draw();
+
+    if(vq.getParameters().buttons[2]){
+      ofSetColor(c1);
+      icoSphere.drawWireframe();      
+    }
+
+    ofPopMatrix();
     ofPopMatrix();
 
   }
+
   camera.end();
   fbo.end();
 

@@ -34,15 +34,10 @@ class ofApp : public ofBaseApp {
 		ofParameter<bool> buttons[5];
 		float potValues[8];
 		int buttonValues[5];
-		// ofxFloatSlider pots[8];
-		// ofxColorSlider color;
-		// ofxVec2Slider center;
-		// ofxIntSlider circleResolution;
-		// ofxToggle filled;
-		// ofxButton buttons[5];
-		// ofxButton ringButton;
 
 		ofParameterGroup parameters;
 		ofxPanel gui;
+
+		string lastMessage;
 };
 

@@ -13,6 +13,7 @@ public:
     vector<ofPoint> points;
 
     int numPoints;
-    ofFbo fbo;
     ofCamera camera;
+    ofFbo fbo;
+    ofIcoSpherePrimitive icoSphere;
 };
